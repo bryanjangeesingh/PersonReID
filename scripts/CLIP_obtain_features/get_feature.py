@@ -52,7 +52,12 @@ def get_text_and_image_features_from_clip(image_path: str, text_path: str) -> tu
 
     assert type(text_input) == str
 
-    text = clip.tokenize([text_input]).to(device)
+    # handle a RuntimeError if this throws an error we do not want to stop the code
+    try:
+        text = clip.tokenize([text_input]).to(device)
+    except RuntimeError:
+        text = clip.tokenize([text_input[:100]]).to(device)
+        pass
 
     with torch.no_grad():
         image_features = model.encode_image(image)
@@ -62,19 +67,31 @@ def get_text_and_image_features_from_clip(image_path: str, text_path: str) -> tu
 
 
 # Enter the training_directory here which contains the folders of each unique person (751 for this specific dataset)
-train_dir = "/home/brytech/vision_question_answer/Market/train/"
-augmented_dataset_dir = ""
+train_dir = "/Users/bryanjangeesingh/Documents/PersonReID/Datasets/train_annotated/"
+augmented_dataset_dir = (
+    "/Users/bryanjangeesingh/Documents/PersonReID/Datasets/augmented_train_dataset/"
+)
 unique_person_array = os.listdir(train_dir)
-
+# ignore .DS_Store files
+unique_person_array = [x for x in unique_person_array if x != ".DS_Store"]
+count = 0
 for person in unique_person_array:
     # get the images of the unique person
     specific_person_images = os.listdir(train_dir + person)
+
+    # ignore .DS_Store files
+    specific_person_images = [x for x in specific_person_images if x != ".DS_Store"]
+
     # create a folder in the persons' folder for the feature repr. of the images and text
     os.makedirs(augmented_dataset_dir + person + "/features", exist_ok=True)
 
     for single_image_of_person in specific_person_images:
-        img_path = train_dir + person + "/" + single_image_of_person + ".jpg"
-        txt_path = train_dir + person + "/" + single_image_of_person + ".txt"
+        img_path = (
+            train_dir + person + "/" + single_image_of_person.split(".")[0] + ".jpg"
+        )
+        txt_path = (
+            train_dir + person + "/" + single_image_of_person.split(".")[0] + ".txt"
+        )
 
         base_name_to_save = img_path.split("/")[-1].split(".")[0]
 
@@ -89,8 +106,12 @@ for person in unique_person_array:
             augmented_dataset_dir + person + "/features",
             base_name_to_save + "_image_features.pkl",
         )
+        count += 1
+
         save_tensor_as_pkl(
             text_features,
             augmented_dataset_dir + person + "/features",
             base_name_to_save + "_text_features.pkl",
         )
+
+        print(f"Progress: {(count/12152.0) * 100}%")
