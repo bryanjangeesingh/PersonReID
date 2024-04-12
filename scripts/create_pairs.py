@@ -7,6 +7,9 @@ unique_person_array = [
 # We should have 751 people
 assert len(unique_person_array) == 751
 
+# create a dictionary containing keys that are the unique people and the values are a list of lists:
+# [[person1_image1_feature, person1_image2_feature...], [person1_text1_feature, person1_text2_feature...]]
+
 features = dict(
     zip(unique_person_array, [([], []) for _ in range(len(unique_person_array))])
 )
@@ -29,7 +32,3 @@ for p in unique_person_array:
     features[p] = [image_features, text_features]
 
 assert len(features) == 751
-
-
-# create a dictionary containing the keys are the unique people and the values are
-# [[person1_image1_feature, person1_image2_feature...], [person1_text1_feature, person1_text2_feature...]]
